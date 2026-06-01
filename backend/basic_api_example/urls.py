@@ -1,7 +1,9 @@
 from django.urls import path
-from .views import PingView, EchoView
+
+from . import views
+
 
 urlpatterns = [
-    path("ping/", PingView.as_view()),
-    path("echo/", EchoView.as_view()),
+    path("ping/", views.ping, name="basic-ping"),
+    path("echo/", views.echo, name="basic-echo"),
 ]

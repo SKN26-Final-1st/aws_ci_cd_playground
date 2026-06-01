@@ -1,8 +1,10 @@
 from django.urls import path
-from .views import JwtLoginView, JwtRefreshView, ProtectedView
+
+from . import views
+
 
 urlpatterns = [
-    path("login/",     JwtLoginView.as_view()),
-    path("refresh/",   JwtRefreshView.as_view()),
-    path("protected/", ProtectedView.as_view()),
+    path("login/", views.login_view, name="jwt-login"),
+    path("me/", views.me, name="jwt-me"),
+    path("protected/", views.protected, name="jwt-protected"),
 ]

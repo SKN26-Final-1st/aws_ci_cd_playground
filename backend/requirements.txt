@@ -1,4 +1,1 @@
-Django>=4.2,<5.0
-gunicorn
-djangorestframework
-djangorestframework-simplejwt
+Django==6.0.5
