@@ -5,9 +5,6 @@ on:
     branches: [main]
 
 jobs:
-  # ──────────────────────────────────────
-  # 백엔드: backend/ 변경 감지 시 EB 배포
-  # ──────────────────────────────────────
   deploy-backend:
     runs-on: ubuntu-latest
     steps:
@@ -17,11 +14,26 @@ jobs:
         id: check
         run: |
           git fetch origin main --depth=2
-          if git diff --name-only HEAD^ HEAD | grep -q '^backend/'; then
+          if git diff --name-only HEAD^ HEAD | grep -qE '^(backend|frontend)/'; then
             echo "RUN=true" >> $GITHUB_OUTPUT
           else
             echo "RUN=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Node 설정
+        if: steps.check.outputs.RUN == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: React 빌드 후 backend/static으로 복사
+        if: steps.check.outputs.RUN == 'true'
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          mkdir -p ../backend/static
+          cp -r dist/* ../backend/static/
 
       - name: Python 설정
         if: steps.check.outputs.RUN == 'true'
@@ -48,55 +60,3 @@ jobs:
           eb init app_sample --region ap-northeast-2 --platform "Python 3.12"
           eb use app-sample-env
           eb deploy
-
-  # ──────────────────────────────────────
-  # 프론트: frontend/ 변경 감지 시 S3 배포
-  # ──────────────────────────────────────
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: frontend 변경 여부 확인
-        id: check
-        run: |
-          git fetch origin main --depth=2
-          if git diff --name-only HEAD^ HEAD | grep -q '^frontend/'; then
-            echo "RUN=true" >> $GITHUB_OUTPUT
-          else
-            echo "RUN=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Node 설정
-        if: steps.check.outputs.RUN == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: 빌드
-        if: steps.check.outputs.RUN == 'true'
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
-
-      - name: AWS 자격증명 설정
-        if: steps.check.outputs.RUN == 'true'
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-northeast-2
-
-      - name: S3 업로드
-        if: steps.check.outputs.RUN == 'true'
-        run: |
-          aws s3 sync frontend/dist/ s3://${{ secrets.S3_BUCKET_FRONTEND }} \
-            --delete
-
-      - name: CloudFront 캐시 무효화
-        if: steps.check.outputs.RUN == 'true'
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
-            --paths "/*"
