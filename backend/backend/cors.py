@@ -8,6 +8,10 @@ DEV_ALLOWED_ORIGINS = {
     "http://127.0.0.1:5173",
 }
 
+PROD_ALLOWED_ORIGINS = {
+    "https://d2sx786sjsnbmk.cloudfront.net",
+}
+
 
 class DevCorsMiddleware:
     def __init__(self, get_response):
@@ -15,11 +19,16 @@ class DevCorsMiddleware:
 
     def __call__(self, request):
         origin = request.headers.get("Origin")
-        # 개발 중인 Vite 주소에서 온 요청에만 CORS 응답 헤더를 붙입니다.
-        should_add_headers = settings.DEBUG and origin in DEV_ALLOWED_ORIGINS
+
+        # 개발/운영 환경에 따라 허용 origin 목록 선택
+        if settings.DEBUG:
+            allowed = DEV_ALLOWED_ORIGINS
+        else:
+            allowed = PROD_ALLOWED_ORIGINS
+
+        should_add_headers = origin in allowed  # ← 이게 핵심 수정 부분!
 
         if should_add_headers and request.method == "OPTIONS":
-            # 브라우저가 실제 POST 전에 보내는 preflight 요청은 바로 204로 응답합니다.
             response = HttpResponse(status=204)
         else:
             response = self.get_response(request)

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-kf6c#@&3xkbo%g2roja8_g=u)rxp@k!9!=8xi-$us&cbc!2lzh'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-kf6c#@&3xkbo%g2roja8_g=u)rxp@k!9!=8xi-$us&cbc!2lzh')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# 배포 시 False
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# EB 도메인 추가
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.elasticbeanstalk.com',
+]
 
 
 # Application definition
@@ -120,9 +126,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# CSRF도 EB 도메인 추가
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'https://*.elasticbeanstalk.com',
+    # 나중에 CloudFront 도메인도 추가
+    'https://d2sx786sjsnbmk.cloudfront.net',
 ]
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
