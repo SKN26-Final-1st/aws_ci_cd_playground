@@ -47,7 +47,7 @@ jobs:
         run: |
           eb init app_sample --region ap-northeast-2 --platform "Python 3.12"
           eb use app-sample-env
-          eb deploy --staged
+          eb deploy
 
   # ──────────────────────────────────────
   # 프론트: frontend/ 변경 감지 시 S3 배포
