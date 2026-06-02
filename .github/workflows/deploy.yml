@@ -26,14 +26,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: React 빌드 후 backend/static으로 복사
-        if: steps.check.outputs.RUN == 'true'
+      - name: React 빌드
+        working-directory: frontend
         run: |
-          cd frontend
           npm ci
           npm run build
-          mkdir -p ../backend/static
-          cp -r dist/* ../backend/static/
+
+      - name: backend/static으로 복사
+        run: |
+          mkdir -p backend/static
+          cp -r frontend/dist/* backend/static/
 
       - name: Python 설정
         if: steps.check.outputs.RUN == 'true'
